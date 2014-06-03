@@ -1,0 +1,6 @@
+*.pyc
+*~
+*#
+tmp*
+# loveq zanshi
+loveq/

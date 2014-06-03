@@ -73,6 +73,33 @@ __datetime__ = '2014-03-20'
 #: 心情
 __mood__ = '心情依然低估，不会用别人的错误惩罚自己，不会用看到镜中的自己而悲伤，慢慢乐观，自信，爱。'
 
+
+cjd = \
+{'SINAGLOBAL':'7384095699526.369.1401609953245',
+' wvr':'5',
+' UV5PAGE':'usr513_160',
+' login_sid_t':'6c649c9187b29347d465084cbe838fdf',
+' UUG':'usr1027',
+' _s_tentry':'login.sina.com.cn',
+' UOR':',,login.sina.com.cn',
+' Apache':'9861488603055.477.1401763792944',
+' ULV':'1401763793135:3:3:3:9861488603055.477.1401763792944:1401632811617',
+' SUS':'SID-2646808671-1401763802-GZ-seco0-eb00f5e19628802e041642ed37d5d19c',
+' SUE':'es%3De67cfb5aaeb1df176b54bc30334865c8%26ev%3Dv1%26es2%3Ddbd4d13d69c69a8dbe0618ff5e760189%26rs0%3DbjegYklDN4jh%252FgqrDHtdteU%252B72dJp5%252Fnwkr5s9PEBCWeOgKN9uAWc%252BY7fzjD7gMLYRlZGI3L7ryiadLSqYT5S5%252BAVOhPl8Sy1Sh6L%252BGJd%252FmfqZrxTXD%252BMdG53saSG8DqrGXTRK07THFEvqWYSdhHEJWRCwiAzau7zTZG85QRsRs%253D%26rv%3D0',
+' SUP':'cv%3D1%26bt%3D1401763802%26et%3D1401850202%26d%3Dc909%26i%3Dd19c%26us%3D1%26vf%3D0%26vt%3D0%26ac%3D0%26st%3D0%26uid%3D2646808671%26name%3D13750022544%2540163.com%26nick%3D%25E6%25A0%25A1%25E5%259B%25AD%25E7%25BB%258F%25E6%25B5%258E%25E8%25B5%2584%25E8%25AE%25AF%25E5%2593%2588%25E5%2593%2588%26fmp%3D%26lcp%3D',
+' SUB':'AX2C2J5AKS8pc0bo1aS%2BgGhSlTEGP6o%2F1zRKc5EWO3q%2F3yxKO%2B7amgjOzgouODTT5npBZnGPrZ0iW4J1HKfgJMvi4vMsl2OX09%2BdvWIut%2ByzM2fF1LlLjVMOtB9ZG7SE46mxWuQyLROAdiStxoKRtSo%3D',
+' SUBP':'002A2c-gVlwEm1uAWxfgXELuuu1xVxBxA7phgc1UHDv39FD4Xz-6p0HuHY-u_1%3D',
+' ALF':'1433299801',
+' SSOLoginState':'1401763802',
+' un':'13750022544@163.com',
+' UV5':'usrmdins312_135'}
+
+import requests
+cj = requests.utils.cookiejar_from_dict(cjd)
+
+
+
+
 # 自定义返回码处理过程
 class DefaultErrorHandler(urllib2.HTTPDefaultErrorHandler):
     '''used to make opener'''
@@ -112,8 +139,9 @@ class Weibo:
             httplib.HTTPConnection.debuglevel = 1
 
         #: 制造可处理Cookie类，使用自定义处理过程
-        self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookielib.LWPCookieJar()), DefaultErrorHandler)
-        self.reset(user,pw)
+        # cj = cookielib.LWPCookieJar()
+        self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj), DefaultErrorHandler)
+        # self.reset(user,pw)
         # 复原
         if debug:
             httplib.HTTPConnection.debuglevel = d
@@ -242,7 +270,7 @@ profile_ftype=1&key_word=%s&is_search=1&__rnd=1392289857878' % ('%s', '%s', '%s'
             for i in [(n-1,n,0,kw), (n,n,0,kw), (n,n,1,kw)]:
                 while(True):
                     try:
-                        soc = wb.urlopen(tpl % i)
+                        soc = self.urlopen(tpl % i)
                         h = json.loads(soc.read())['data'].encode('utf-8')
                         soc.close()
                         # with open('tmp%s.html'%n, 'w') as f: f.write(h)
