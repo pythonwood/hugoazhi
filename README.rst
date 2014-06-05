@@ -53,3 +53,11 @@ www.crifan.com/python_cookiejar_filecookiejar_save_error_notimplementederror/
     'UOR': 'lyonna.me,widget.weibo.com,login.sina.com.cn'}
     
     (' ALF',' Apache',' SINAGLOBAL',' SSOLoginState',' SUB',' SUBP',' SUE',' SUP',' SUS',' ULV',' YF-Page-G0',' YF-Ugrow-G0',' YF-V5-G0',' _s_tentry',' login_sid_t',' myuid',' un',' wvr','UOR')
+
+
+
+评论search，每三个一组，首页包含3次。
+(pre_page=0,page=1,pagebar=0),(pre_page=1,page=1,pagebar=0),(pre_page=1,page=1,pagebar=1)
+http://weibo.com/p/aj/mblog/mbloglist?_wv=5&domain=100505&pre_page=0&page=1&max_id=3708816657175473&end_id=3716789328888062&count=15&pagebar=0&max_msign=&filtered_min_id=&pl_name=Pl_Official_LeftProfileFeed__24&id=1005051716235922&script_uri=/p/1005051716235922/weibo&feed_type=0&profile_ftype=1&key_word=%E5%BA%8A%E5%89%8D%E6%98%8E%E6%9C%88%E5%85%89&is_search=1&__rnd=1401772208635
+http://weibo.com/p/aj/mblog/mbloglist?_wv=5&domain=100505&pre_page=1&page=1&max_id=3708816657175473&end_id=3716789328888062&count=15&pagebar=0&max_msign=&filtered_min_id=&pl_name=Pl_Official_LeftProfileFeed__24&id=1005051716235922&script_uri=/p/1005051716235922/weibo&feed_type=0&profile_ftype=1&key_word=%E5%BA%8A%E5%89%8D%E6%98%8E%E6%9C%88%E5%85%89&is_search=1&__rnd=1401772208635
+http://weibo.com/p/aj/mblog/mbloglist?_wv=5&domain=100505&pre_page=1&page=1&max_id=3708816657175473&end_id=3716789328888062&count=15&pagebar=1&max_msign=&filtered_min_id=&pl_name=Pl_Official_LeftProfileFeed__24&id=1005051716235922&script_uri=/p/1005051716235922/weibo&feed_type=0&profile_ftype=1&key_word=%E5%BA%8A%E5%89%8D%E6%98%8E%E6%9C%88%E5%85%89&is_search=1&__rnd=1401772208635

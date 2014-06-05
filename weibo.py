@@ -1,11 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-#: 登陆成功 实测2014-02-13
-# 面向对象封装成Weibo类
-# 参考：一枚菜鸟的学习笔记 2013-03-10 http://blog.csdn.net/monsion/article/details/8656690
 '''
-#文档生成用sphinx
+文档生成用sphinx
 
 模块:weibo
     一个微博爬虫模块。作者pythonwood。
@@ -20,6 +17,20 @@
     根据用户名字找id，根据源文件html嵌入的JS代码::
 
         $CONFIG['oid']='1093974672'; 
+
+    评论search，每三个一组，首页包含3次。
+
+    (pre_page=0,page=1,pagebar=0),(pre_page=1,page=1,pagebar=0),(pre_page=1,page=1,pagebar=1)
+
+    http://weibo.com/p/aj/mblog/mbloglist?_wv=5&domain=100505&pre_page=0&page=1&max_id=3708816657175473&end_id=3716789328888062&count=15&pagebar=0&max_msign=&filtered_min_id=&pl_name=Pl_Official_LeftProfileFeed__24&id=1005051716235922&script_uri=/p/1005051716235922/weibo&feed_type=0&profile_ftype=1&key_word=%E5%BA%8A%E5%89%8D%E6%98%8E%E6%9C%88%E5%85%89&is_search=1&__rnd=1401772208635
+
+    http://weibo.com/p/aj/mblog/mbloglist?_wv=5&domain=100505&pre_page=1&page=1&max_id=3708816657175473&end_id=3716789328888062&count=15&pagebar=0&max_msign=&filtered_min_id=&pl_name=Pl_Official_LeftProfileFeed__24&id=1005051716235922&script_uri=/p/1005051716235922/weibo&feed_type=0&profile_ftype=1&key_word=%E5%BA%8A%E5%89%8D%E6%98%8E%E6%9C%88%E5%85%89&is_search=1&__rnd=1401772208635
+
+    http://weibo.com/p/aj/mblog/mbloglist?_wv=5&domain=100505&pre_page=1&page=1&max_id=3708816657175473&end_id=3716789328888062&count=15&pagebar=1&max_msign=&filtered_min_id=&pl_name=Pl_Official_LeftProfileFeed__24&id=1005051716235922&script_uri=/p/1005051716235922/weibo&feed_type=0&profile_ftype=1&key_word=%E5%BA%8A%E5%89%8D%E6%98%8E%E6%9C%88%E5%85%89&is_search=1&__rnd=1401772208635
+
+    返回格式::
+
+        {"code":"100000","msg":"","data":"<html...>"}
 
     查看所有评论api:
         http://weibo.com/aj/comment/big?_wv=5&id=3451784896742605&max_id=3474003261477621&filter=0&page=2&__rnd=1395231865936
@@ -56,6 +67,7 @@ Weibo:
     .. 
         1.2 fix bug [Errno 10054] 这个错误是connection reset by peer.也就是传说的远端主机重置了此连接。
         1.5 可以根据爬评论，爬转发信息，好多天的成果。
+        1.6 reviews
 '''
 
 from urllib import urlencode,quote
@@ -64,459 +76,158 @@ import os, sys, time
 import base64, rsa
 import json, re, binascii
 
+import requests
+from bs4 import BeautifulSoup
+
 #: 版本 
-__version__ = '1.5'
+__version__ = '1.6'
 #: 作者
 __author__ = 'pythonwood'
 #: 日期
-__datetime__ = '2014-03-20'
+__datetime__ = '2014-06-03'
 #: 心情
-__mood__ = '心情依然低估，不会用别人的错误惩罚自己，不会用看到镜中的自己而悲伤，慢慢乐观，自信，爱。'
+__mood__ = '慢慢乐观，自信，爱。'
 
 
-cjd = \
-{'SINAGLOBAL':'7384095699526.369.1401609953245',
-' wvr':'5',
-' UV5PAGE':'usr513_160',
-' login_sid_t':'6c649c9187b29347d465084cbe838fdf',
-' UUG':'usr1027',
-' _s_tentry':'login.sina.com.cn',
-' UOR':',,login.sina.com.cn',
-' Apache':'9861488603055.477.1401763792944',
-' ULV':'1401763793135:3:3:3:9861488603055.477.1401763792944:1401632811617',
-' SUS':'SID-2646808671-1401763802-GZ-seco0-eb00f5e19628802e041642ed37d5d19c',
-' SUE':'es%3De67cfb5aaeb1df176b54bc30334865c8%26ev%3Dv1%26es2%3Ddbd4d13d69c69a8dbe0618ff5e760189%26rs0%3DbjegYklDN4jh%252FgqrDHtdteU%252B72dJp5%252Fnwkr5s9PEBCWeOgKN9uAWc%252BY7fzjD7gMLYRlZGI3L7ryiadLSqYT5S5%252BAVOhPl8Sy1Sh6L%252BGJd%252FmfqZrxTXD%252BMdG53saSG8DqrGXTRK07THFEvqWYSdhHEJWRCwiAzau7zTZG85QRsRs%253D%26rv%3D0',
-' SUP':'cv%3D1%26bt%3D1401763802%26et%3D1401850202%26d%3Dc909%26i%3Dd19c%26us%3D1%26vf%3D0%26vt%3D0%26ac%3D0%26st%3D0%26uid%3D2646808671%26name%3D13750022544%2540163.com%26nick%3D%25E6%25A0%25A1%25E5%259B%25AD%25E7%25BB%258F%25E6%25B5%258E%25E8%25B5%2584%25E8%25AE%25AF%25E5%2593%2588%25E5%2593%2588%26fmp%3D%26lcp%3D',
-' SUB':'AX2C2J5AKS8pc0bo1aS%2BgGhSlTEGP6o%2F1zRKc5EWO3q%2F3yxKO%2B7amgjOzgouODTT5npBZnGPrZ0iW4J1HKfgJMvi4vMsl2OX09%2BdvWIut%2ByzM2fF1LlLjVMOtB9ZG7SE46mxWuQyLROAdiStxoKRtSo%3D',
-' SUBP':'002A2c-gVlwEm1uAWxfgXELuuu1xVxBxA7phgc1UHDv39FD4Xz-6p0HuHY-u_1%3D',
-' ALF':'1433299801',
-' SSOLoginState':'1401763802',
-' un':'13750022544@163.com',
-' UV5':'usrmdins312_135'}
+cookies = {
+'SINAGLOBAL':'7384095699526.369.1401609953245',
+'UOR':',,login.sina.com.cn',
+'SUBP':'002A2c-gVlwEm1uAWxfgXELuuu1xVxBxA7phgc1UHDv39FD4Xz-6p0HuHY-u_1%3D',
+'un':'13750022544@163.com',
+'_s_tentry':'weibo.com',
+'Apache':'8569682755041.867.1401932422169',
+'ULV':'1401932422210:5:5:5:8569682755041.867.1401932422169:1401771921569',
+'YF-Page-G0':'ffe43932f05408fcdf32c673d8997f97',
+'YF-V5-G0':'fec5de0eebb24ef556f426c61e53833b',
+'login_sid_t':'cce6c55fa95bf4a738443acb4d5cf341',
+'YF-Ugrow-G0':'062d74e096398759b246e61a81b65c98',
+'v5':'5fc1edb622413480f88ccd36a41ee587'
+}
 
-import requests
-cj = requests.utils.cookiejar_from_dict(cjd)
+headers = {
+'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+'Accept-Encoding':'gzip,deflate,sdch',
+'Accept-Language':'zh-CN,zh;q=0.8',
+'Cache-Control':'max-age=0',
+'Connection':'keep-alive',
+'Host':'weibo.com',
+'User-Agent':'Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/34.0.1847.116 Chrome/34.0.1847.116 Safari/537.36',
+'Cookie':'SINAGLOBAL=7384095699526.369.1401609953245; UOR=,,login.sina.com.cn; _s_tentry=weibo.com; Apache=8569682755041.867.1401932422169; ULV=1401932422210:5:5:5:8569682755041.867.1401932422169:1401771921569; YF-Page-G0=ffe43932f05408fcdf32c673d8997f97; YF-V5-G0=fec5de0eebb24ef556f426c61e53833b; login_sid_t=cce6c55fa95bf4a738443acb4d5cf341; YF-Ugrow-G0=062d74e096398759b246e61a81b65c98; v5=5fc1edb622413480f88ccd36a41ee587; appkey=; SUS=SID-2646808671-1401935853-GZ-g496v-46dabd282689d4c9bf6cd882d0802be9; SUE=es%3Db1cb7e7952848a9e738684e53fb33639%26ev%3Dv1%26es2%3D8ec1c0004d45cbd04ec4532cc0a29731%26rs0%3DMHP%252FfEsDycutNtGjENIH4e5D%252FE3lxfObjVT5E96mPV6xegpZ4fX8qcr3q6yGT3t7LCCfsX9RPoSXz561hKVXUvbunnz9limE5AnZCSkCNqF9kfTBbFygjne4OBIFNwKi3rSV6UsLVkZ0yODLkcPTC29E5uHAJN9mFOUZXgtBT3c%253D%26rv%3D0; SUP=cv%3D1%26bt%3D1401935853%26et%3D1402022253%26d%3Dc909%26i%3D2be9%26us%3D1%26vf%3D0%26vt%3D0%26ac%3D19%26st%3D0%26uid%3D2646808671%26name%3D13750022544%2540163.com%26nick%3D%25E6%25A0%25A1%25E5%259B%25AD%25E7%25BB%258F%25E6%25B5%258E%25E8%25B5%2584%25E8%25AE%25AF%25E5%2593%2588%25E5%2593%2588%26fmp%3D%26lcp%3D; SUB=AejYkRSMERO5GhGZhAtq1D1WVczmGI8%2F1LaVSVHq2XNPhGySbxC%2F6XEyXRq7Jw%2B7dWj%2BjDjAy9bf63N7prkOob1QSspkvsLeYM2POBaSsb%2BLMEl%2F75yL%2BhALAI2Dk8AgdNTr%2B2P%2Bx%2F1Ns0owR%2BbMISE%3D; SUBP=002A2c-gVlwEm1uAWxfgXELuuu1xVxBxA7phgc1UHDv39FD4Xz-6p0HuHY-u_1%3D; ALF=1433471852; SSOLoginState=1401935853; un=13750022544@163.com; page=e2379342ceb6c9c8726a496a5565689e'
+}
 
+rootdir = '/media/E/loveq-weibo'
 
+head = ('时间','网址','id','赞','转发','评论')
 
+urls_list = []
 
-# 自定义返回码处理过程
-class DefaultErrorHandler(urllib2.HTTPDefaultErrorHandler):
-    '''used to make opener'''
-    def http_error_default(self, req, fp, code, msg, headers):
-        result = urllib2.HTTPError(req.get_full_url(), code, msg, headers, fp)
-        result.status = code
-        return result
+SEP = '\t'
 
-
-class Weibo:
-    '''
-**用法**::
-
-    wb = Weibo('user', 'password')
-    test = [(1991027691,'招聘微博'), ('liuyangzhi', '对某大学毕业照片说了两句不中听的话，招来不少年轻人不满')]
-    fnlist = []
-    for i in test:
-        fn = wb.search_post(i[0], i[1])
-        fnlist.append(fn)
-    for i in fnlist:
-        try: wb.pull_comment_worker(i)
-        except KeyboardInterrupt as e: sys.stdout.write(str(e))
-    for i in fnlist:
-        try: wb.pull_forward_worker(i)
-        except KeyboardInterrupt as e: sys.stdout.write(str(e))
-    '''
-    #: 面具伪装，降低被封可能
-    # ua = {'User-Agent':'Mozilla/5.0 (X11; Linux i686; rv:8.0) Gecko/20100101 Firefox/8.0'}
-    ua = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:27.0) Gecko/20100101 Firefox/27.0'}
-    def __init__(self, user, pw, debug=False):
-        '''
-        you can make:
-        wb = Weibo(user, password)
-        '''
-        d = httplib.HTTPConnection.debuglevel
-        if debug:
-            httplib.HTTPConnection.debuglevel = 1
-
-        #: 制造可处理Cookie类，使用自定义处理过程
-        # cj = cookielib.LWPCookieJar()
-        self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj), DefaultErrorHandler)
-        # self.reset(user,pw)
-        # 复原
-        if debug:
-            httplib.HTTPConnection.debuglevel = d
-
-    def reset(self, user, pw):
-        '''重置用户，密码'''
-        self.user = user
-        self.pw = pw
-        return self.login()
-
-    def login(self):
-        '''登录过程，初始化时调用，返回self'''
-        url = 'http://login.sina.com.cn/sso/prelogin.php?entry=sso&callback=sinaSSOController.preloginCallBack&su=%s&rsakt=mod&client=ssologin.js(v1.4.4)' % self.user
-        #: e.g 'sinaSSOController.preloginCallBack({"retcode":0,"servertime":1392274484,"pcid":"gz-58593947d0295e6aecc605897b4211ad6e3e","nonce":"HMOD0L","pubkey":"EB2A38568661887FA180BDDB5CABD5F21C7BFD59C090CB2D245A87AC253062882729293E5506350508E7F9AA3BB77F4333231490F915F6D63C55FE2F08A49B353F444AD3993CACC02DB784ABBB8E42A9B1BBFFFB38BE18D78E87A0E41B9B8F73A928EE0CCEE1F6739884B9777E4FE9E88A1BBE495927AC4A799B3181D6442443","rsakv":"1330428213","exectime":0})
-        soc = self.urlopen(url)
-        data = json.loads(soc.read()[35:-1])
-        soc.close()
-        #: 第一次http请求， 获取有用信息，将与加密后密码一同post
-        servertime, nonce, pubkey, rsakv = str(data['servertime']), data['nonce'], data['pubkey'], data['rsakv']
-        key = rsa.PublicKey(int(pubkey,16), 65537)
-        sp = rsa.encrypt(str(servertime) + '\t' + str(nonce) + '\n' + str(self.pw), key)
-        #: 用户名url编码,base64加密
-        su = base64.encodestring(urllib.quote(self.user))[:-1]
-        sp = binascii.b2a_hex(sp)
-        postdata = {
-                'entry': 'weibo',
-                'gateway': '1',
-                'from': '',
-                'savestate': '7',
-                'userticket': '1',
-                'ssosimplelogin': '1',
-                'vsnf': '1',
-                'vsnval': '',
-                'su': su,
-                'service': 'miniblog',
-                'servertime': servertime,
-                'nonce': nonce,
-                'pwencode': 'rsa2',
-                'sp': sp,
-                'encoding': 'UTF-8',
-                'prelt': '115',
-                'rsakv': rsakv,
-                'url': 'http://weibo.com/ajaxlogin.php?framelogin=1&callback=parent.sinaSSOController.feedBackUrlCallBack',
-                'returntype': 'META'
-                }
-        req = urllib2.Request(
-                url = 'http://login.sina.com.cn/sso/login.php?client=ssologin.js(v1.4.4)',
-                data = urllib.urlencode(postdata),
-                headers = Weibo.ua
-                )
-        o = self.opener.open(req)
-        h = o.read()
-        o.close()
-        #e.g location.replace("http://weibo.com/ajaxlogin.php?framelogin=1&callback=parent.sinaSSOController.feedBackUrlCallBack&ssosavestate=1394872359&ticket=ST-MjY0NjgwODY3MQ==-1392280359-gz-C29D9682D3DE6B9174BA3A502294B24A&retcode=0");
-        #: 第二次http请求 已经成功一半，还要访问几个页面。
-        o = self.urlopen(re.search('location\.replace\("(.*)"\);', h).group(1))
-        #: e.g parent.sinaSSOController.feedBackUrlCallBack({"result":true,"userinfo":{"uniqueid":"2646808671","userid":null,"displayname":"\u6821\u56ed\u7ecf\u6d4e\u8d44\u8baf\u54c8\u54c8","userdomain":"?wvr=5&lf=reg"},"redirect":"http:\/\/weibo.com\/guide\/welcome"});
-        #: 第三次http请求，有可能返回要验证码。
-        if "\u4e3a\u4e86\u60a8\u7684\u5e10\u53f7\u5b89\u5168\uff0c\u8bf7\u8f93\u5165\u9a8c\u8bc1\u7801" in o.read():
-            raise Exception("为了您的帐号安全，请输入验证码")
-        #: 成功
-        o.close() # for [Errno 10054] 远程主机强迫关闭了一个现有的连接。
-        return self
+def requests_get(url, params=None):
+    resp = requests.get(url, params=params, cookies=cookies, headers=headers)
+    # print resp.url, params, resp.text[:2000]
+    sys.stdout.write('.'); sys.stdout.flush()
+    # with open('tmp.html', 'w') as f : f.write(resp.text)
+    return resp
 
 
-    def win_bom_fix(self, fileread):
-        '''该死的windows，杀千刀'''
-        if fileread.startswith('\xef\xbb\xbf1'):
-            return fileread[3:]
-        return fileread
-
-    def search_post(self,user,keyword,filename=None):
-        '''
-        搜索某用户含关键词微博，信息保存到 关键词_id.txt
-
-        例如搜索hugo的一些事一些情的含“床前明月光”微博。保存在“床前明月光_1716235922.txt”中。
-
-        文件每行格式一样：
-            2014-03-09_23:04恭喜发财289(\tab)3686348718617570(\tab)/1724187070/AAek7A9P4
-        
-        ::
-
-            ..
-            *google [Errno 10054]:* 
-            python socket.error: [Errno 10054] 远程主机强迫关闭了一个现有的连接。
-            这个错误是connection reset by peer.也就是传说的远端主机重置了此连接。
-            原因可能是socket超时时间过长；也可能是request = urllib.request.urlopen(url)之后，
-            没有进行request.close()操作；也可能是没有sleep几秒，导致网站认定这种行为是攻击。
-        '''
-        if filename==None:
-            filename = '%s_%s.txt' % (keyword, user)
-        ufn = filename.decode('utf-8')
-        if type(user) is str:
-            nickname = str(user)
-            soc = self.urlopen('http://weibo.com/'+nickname)
-            h = soc.read()
-            soc.close()
-            uid = re.search(r"\$CONFIG\['oid'\]='(\d+)';", h).group(1)
-            uid = int(uid)
+def add_urls_list(html):
+    def tool(text):
+        v1 = text.find('(')
+        v2 = text.find(')')
+        if 0<=v1 and v1<v2:
+            return text[v1+1:v2]
         else:
-            uid = user
-
-        latest = ''
-        if os.path.isfile(ufn):
-            with open(ufn, 'r') as f:
-                latest = f.readline().strip()
-                latest = self.win_bom_fix(latest)
-
-        # 关键字搜索，注意中文会变成很多%s
-        kw = quote(keyword)
-        tpl = 'http://weibo.com/p/aj/mblog/mbloglist?domain=100505&pre_page=%s&page=%s&count=15&pagebar=%s&max_msign=\
-&filtered_min_id=&pl_name=Pl_Official_LeftProfileFeed__22&id=100505%s&script_uri=/p/100505%s/weibo&feed_type=0&\
-profile_ftype=1&key_word=%s&is_search=1&__rnd=1392289857878' % ('%s', '%s', '%s', uid, uid, '%s') # not kw hear
-            
-        # 编译正则，加快匹配
-        # t = re.compile(r'<a suda-data="key=smart_feed&value=time_sort_comm".*?评论\(([0-9]+)\).*?name=([0-9]+).*?(/%s/[^?]+).*?"([0-9]{4}-[0-9]{1,2}-[0-9]{1,2}) ([0-9]{1,2}:[0-9]{1,2})"'%uid, re.S)
-        t = re.compile(r'loc=profile.*?</em>\(?(\d*)\)</a>.*?转发\(?(\d*)\).*?收藏.*?评论\(?(\d*)\).*?'
-	   '<a name=(\d+) target="_blank" href="(.*?)\?mod=weibotime" title="(.*?) (.*?)"', re.S)
-        #: [('38', '91', '1150', '3680888619802317', '/1716235922/AxWhvF81T', '2014-02-22', '21:28')]
-        #: 赞，转发，评论, postid，网址(转发加?type=repost)，日期，时间
-
-        # 重构了这段代码。好多了！ 2014-03-20 (论pytohn循环体后面的else的作用！) 
-        dl = []
-        n = 1
-        while(True):
-            for i in [(n-1,n,0,kw), (n,n,0,kw), (n,n,1,kw)]:
-                while(True):
-                    try:
-                        soc = self.urlopen(tpl % i)
-                        h = json.loads(soc.read())['data'].encode('utf-8')
-                        soc.close()
-                        # with open('tmp%s.html'%n, 'w') as f: f.write(h)
-                        sys.stdout.write('.')
-                        break
-                    except Exception as e:
-                        sys.stdout.write(str(e))
-                        continue
-                
-                m = t.findall(h)
-                #: [('38', '91', '1150', '3680888619802317', '/1716235922/AxWhvF81T', '2014-02-22', '21:28')]
-                ext = [j for j in m if j[3] not in latest]
-                dl.extend(ext)
-                if len(ext)<len(m) or h.find('<span>正在加载中，请稍候...</span>')==-1:
-                    break
-            else:
-                n += 1
-                continue
-            break
-
-
-        if latest:
-            with open(ufn, 'r') as f:
-                before_data = self.win_bom_fix(f.read())
-                if dl: # bug without this line!
-                    with open(ufn, 'w') as ff:
-                        ff.write('\n'.join('\t'.join(i) for i in dl)+'\n'+before_data)
-                print "update %s url in %s" % (len(dl), filename)
-        elif dl:
-            with open(ufn, 'w') as f:
-                f.write('\n'.join('\t'.join(i) for i in dl))
-            print "write %s url in %s" % (len(dl), filename)
-
-        return filename #self
-    # search_comment() end
-
-
-
-    def pull_comment(self,postid):
-        '''id -> list of comment'''
-        url = 'http://weibo.com/aj/comment/big?_wv=5&id=%s&max_id=4751849175081847&filter=0&page=%s&__rnd=1388853222398' % (postid, '%s')
-        r = []
-        pagenum = 1
-        rb = re.compile(r'<dt>(.*?)</dt>.*?<dd>(.*?</a>)(.*?)<span class="S_txt2">(.*?)</span>', re.S)
-        #: 图片，个人主页， 留言，时间
-        while(True):
-            try:
-                soc = self.urlopen(url % pagenum)
-                j = json.loads(soc.read())
-                soc.close()
-                sys.stdout.write('.')
-            except Exception as e:
-                sys.stdout.write(str(e))
-                continue
-
-            d = j['data']
-            m = rb.findall(d['html'].encode('utf-8'))
-            r.extend(m)
-            d = d['page']
-            if d['pagenum'] == d['totalpage'] or pagenum >= 500:  # 设置上限500页
-                break
-            pagenum += 1
+            return '0'
         
-        return r
-        
+    ret = 0
+    bs = BeautifulSoup(html)
+    # print bs.prettify()
+    for post in bs.find_all('div', class_="WB_feed_datail S_line2 clearfix"):
+        # print post.prettify()
+        WB_func = post.find_all('div', class_="WB_func clearfix")[-1]  # 技巧
+        WB_handle = WB_func.findChild('div', class_='WB_handle')
+        WB_from = WB_func.findChild('div', class_='WB_from')
+        WB_from_a = WB_from.findChild('a')
+        postid = WB_from_a.attrs['name']  # post.mid
+        url = u'http://weibo.com' + WB_from_a.attrs['href']
+        time = WB_from_a.attrs['title']
+        WB_handle_a = WB_handle.findChildren('a')
 
-    def pull_comment_worker(self, filename, dirname='weibo-data/'):
-        '''下载符合格式的文件中的每条记录。将id对应微博的评论下载到本地filename文件中，并简化美化。'''
+        zan = tool(WB_handle_a[0].text)
+        zhuanfa = tool(WB_handle_a[1].text)
+        pinglun = tool(WB_handle_a[3].text)
+        if any(postid in i for i in urls_list):
+            return ret
+        else:
+            urls_list.append((time, url, postid, zan, zhuanfa, pinglun))
+            ret += 1
+    return ret
 
-        keyword = filename.split('_')[0]        
-        ufn = filename.decode('utf-8')
-        #: unicode 文件名跨平台，才不乱码
-        
-        with open(ufn, 'r') as f:
-            dl = f.readlines()
-            dl[0] = self.win_bom_fix(dl[0])
-        
-        dl = [i.split('\t') for i in dl]
-
-        tpl = '''
-<!DOCTYPE html>
-<html lang="zh-cn">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="python应用，一些事一些情微博爬虫。">
-<meta name="author" content="pythonwood 2014">
-<title>%s</title>
-<link rel="stylesheet" href="http://cdn.bootcss.com/twitter-bootstrap/3.0.3/css/bootstrap.min.css">
-</head>
-<body>
-<div class="container">
-<h3>%s<small>--pythonwood</small></h3>
-<ul class="list-unstyled">
-%s
-</ul>
-</div>
-<script src="http://cdn.bootcss.com/jquery/1.10.2/jquery.min.js"></script>
-<script type="text/javascript">
-$('a[usercard]').each(function(){this.href='http://weibo.com'+this.href.substring(this.href.lastIndexOf('/'))})
-</script>
-</body>
-</html>'''
-
-        for i in dl:
-            before = time.time()
-
-            #: [('38', '91', '1150', '3680888619802317', '/1716235922/AxWhvF81T', '2014-02-22', '21:28')]
-            # windows 下文件名不可以有:
-            win_fix = "%s_%s" % (i[5], i[6].replace(':','-'))
-            _filename = "%s%s%s%s%s.html" % (dirname, keyword, win_fix, '评论', i[2])
-            ufilename = _filename.decode('utf-8')
-            #: unicode 文件名跨平台，才不乱码
-            if os.path.isfile(ufilename):
-                continue
-            sys.stdout.write( ufilename )
-
-            data = self.pull_comment(i[3])
-
-            for j in range(len(data)):
-                data[j] = '%s.%s' % ('\n'.join(k.strip() for k in data[j]),j+1)
-            html = '<li>%s</li>' % ('</li>\n<li>'.join(data))
-            html = tpl % (_filename,_filename,html)
-            with open(ufilename, 'w') as f:
-                f.write(html)
-
-            time_used = time.time()-before
-            print "\nDone: *** %s命中，%sKB，%s秒 ***" % (len(data),os.path.getsize(ufilename)/1024, round(time_used, 1))
+def get_posts_list(uid, keyword):
+    url = 'http://weibo.com/p/aj/mblog/mbloglist'
+    # url = 'http://127.0.0.1:8000'
+    params = {
+        '_wv': '5',
+        'domain': '100505',
+        'pre_page': '1',
+        'page': '1',
+        'max_id': '3708816657175473',
+        'end_id': '3716789328888062',
+        'count': '15',
+        'pagebar': '1',
+        'max_msign': '',
+        'filtered_min_id': '',
+        'pl_name': 'Pl_Official_LeftProfileFeed__24',
+        'id': '100505%s'%uid,
+        'script_uri': '/p/100505%s/weibo'%uid,
+        'feed_type': '0',
+        'profile_ftype': '1',
+        'key_word': keyword,
+        'is_search': '1',
+        '__rnd': '1401772208635',
+    }
+    opt = ('pre_page', 'page', 'pagebar')
+    n = 1
+    while n < 50:
+        for sel in ((n-1,n,0),(n,n,0),(n,n,1)):
+            params.update(dict(zip(opt,sel)))
+            resp = requests_get(url, params)
+            rj = resp.json()
+            if add_urls_list(rj['data']) == 0: 
+                # print sel, resp.url, resp.status_code, len(resp.text) 
+                return
+        n += 1
 
 
+def dump(uid, keyword, filename=None):
+    if not filename:
+        filename = '%s%s.txt'%(keyword,uid)
+    with open(filename, 'w') as f:
+        f.write(SEP.join(head))
+        f.write(os.linesep)
+        f.write(os.linesep.join(SEP.join(i) for i in urls_list))
+def load(uid, keyword, filename=None):
+    if not filename:
+        filename = '%s%s.txt'%(keyword,uid)
+    if not os.path.isfile(filename):
+        return
+    fp = open(filename, 'r')
+    lines = [line.strip() for line in fp.readlines()]
+    for line in lines[1:]:
+        urls_list.append(line.split(SEP))
 
-    def pull_forward(self, postid):
-        '''id -> list of forword info'''
-        url = 'http://weibo.com/aj/mblog/info/big?_wv=5&id=%s&max_id=4751849175081847&filter=0&page=%s&__rnd=1388853222398' % (postid, '%s')
-        r = []
-        pagenum = 1
-        rb = re.compile(r'<dt>(.*?)</dt>.*?<dd>(.*?</a>).*?<em>(.*?)</em>.*?title="([-: 0-9]+)"', re.S)
-        #: 图片，个人主页， 留言，时间
-        while(True):
-            try:
-                soc = self.urlopen(url % pagenum)
-                j = json.loads(soc.read())
-                soc.close()
-                sys.stdout.write('.')
-            except Exception as e:
-                sys.stdout.write(str(e))
-                continue
+def pull_comment(html):
+    ''''''
 
-            d = j['data']
-            m = rb.findall(d['html'].encode('utf-8'))
-            r.extend(m)
-            d = d['page']
-            if d['pagenum'] == d['totalpage'] or pagenum >= 500:  # 设置上限500页
-                break
-            pagenum += 1
-        
-        return r
-
-    def pull_forward_worker(self, filename, dirname='weibo-data/'):
-        '''下载符合格式的文件中的每条记录。将id对应微博的评论下载到本地filename文件中，并简化美化'''
-        keyword = filename.split('_')[0]        
-        ufn = filename.decode('utf-8')
-        #: unicode 文件名跨平台，才不乱码
-        
-        with open(ufn, 'r') as f:
-            dl = f.readlines()
-            dl[0] = self.win_bom_fix(dl[0])
-        
-        dl = [i.split('\t') for i in dl]
-
-        tpl = '''
-<!DOCTYPE html>
-<html lang="zh-cn">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="python应用，一些事一些情微博爬虫。">
-<meta name="author" content="pythonwood 2014">
-<title>%s</title>
-<link rel="stylesheet" href="http://cdn.bootcss.com/twitter-bootstrap/3.0.3/css/bootstrap.min.css">
-</head>
-<body>
-<div class="container">
-<h3>%s<small>--pythonwood</small></h3>
-<ul class="list-unstyled">
-%s
-</ul>
-</div>
-<script src="http://cdn.bootcss.com/jquery/1.10.2/jquery.min.js"></script>
-<script type="text/javascript">
-$('a[usercard]').each(function(){this.href='http://weibo.com'+this.href.substring(this.href.lastIndexOf('/'))})
-</script>
-</body>
-</html>'''
-
-        for i in dl:
-            before = time.time()
-
-            #: [('38', '91', '1150', '3680888619802317', '/1716235922/AxWhvF81T', '2014-02-22', '21:28')]
-            # windows 下文件名不可以有:
-            win_fix = "%s_%s" % (i[5], i[6].replace(':','-'))
-            _filename = "%s%s%s%s%s.html" % (dirname, keyword, win_fix, '转发', i[1])
-            ufilename = _filename.decode('utf-8')
-            #: unicode 文件名跨平台，才不乱码
-            if os.path.isfile(ufilename):
-                continue
-            sys.stdout.write( ufilename )
-
-            data = self.pull_forward(i[3])
-
-            for j in range(len(data)):
-                data[j] = '%s.%s' % ('\n'.join(k.strip() for k in data[j]),j+1)
-            html = '<li>%s</li>' % ('</li>\n<li>'.join(data))
-            html = tpl % (_filename,_filename,html)
-            with open(ufilename, 'w') as f:
-                f.write(html)
-
-            time_used = time.time()-before
-            print "\nDone: *** %s命中，%sKB，%s秒 ***" % (len(data),os.path.getsize(ufilename)/1024, round(time_used, 1))
-        
-
-            
-
-    def urlopen(self, url):
-        if not url.lower().startswith('http://'):
-            url = 'http://' + url
-        req = urllib2.Request(
-                url = url,
-                headers = Weibo.ua
-                )
-        return self.opener.open(req)
 
 def main():
-    wb = Weibo('13750022544@163.com', '19920616', debug=True)
-    
-    test = [(1991027691,'招聘微博'), ('liuyangzhi', '对某大学毕业照片说了两句不中听的话，招来不少年轻人不满')]
-    fnlist = []
-    for i in test:
-        fn = wb.search_post(i[0], i[1])
-        fnlist.append(fn)
-    for i in fnlist:
-        try: wb.pull_comment_worker(i)
-        except KeyboardInterrupt as e: sys.stdout.write(str(e))
-    for i in fnlist:
-        try: wb.pull_forward_worker(i)
-        except KeyboardInterrupt as e: sys.stdout.write(str(e))
+    # test = [('床前明月光','1716235922'), ('恭喜发财','1724187070')]
+    # test = [(1991027691,'招聘微博'), ('liuyangzhi', '对某大学毕业照片说了两句不中听的话，招来不少年轻人不满')]
+    uid, keyword = ('1716235922','床前明月光',)
+    get_posts_list(uid, keyword)
+    dump(uid, keyword)
 
 if __name__ == '__main__':
-    main()
+    ''''''
+    # main()
