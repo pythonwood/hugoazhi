@@ -9,59 +9,6 @@
 
     起因是为了看《一些事一些情》的微博评论更方便。
 
-使用sphinx生成本文档
-
-可释放了，但代码可压缩，以后再做 2014-03-20
-
-微博探测笔记：
-    根据用户名字找id，根据源文件html嵌入的JS代码::
-
-        $CONFIG['oid']='1093974672'; 
-
-    评论search，每三个一组，首页包含3次。
-
-    (pre_page=0,page=1,pagebar=0),(pre_page=1,page=1,pagebar=0),(pre_page=1,page=1,pagebar=1)
-
-    http://weibo.com/p/aj/mblog/mbloglist?_wv=5&domain=100505&pre_page=0&page=1&max_id=3708816657175473&end_id=3716789328888062&count=15&pagebar=0&max_msign=&filtered_min_id=&pl_name=Pl_Official_LeftProfileFeed__24&id=1005051716235922&script_uri=/p/1005051716235922/weibo&feed_type=0&profile_ftype=1&key_word=%E5%BA%8A%E5%89%8D%E6%98%8E%E6%9C%88%E5%85%89&is_search=1&__rnd=1401772208635
-
-    http://weibo.com/p/aj/mblog/mbloglist?_wv=5&domain=100505&pre_page=1&page=1&max_id=3708816657175473&end_id=3716789328888062&count=15&pagebar=0&max_msign=&filtered_min_id=&pl_name=Pl_Official_LeftProfileFeed__24&id=1005051716235922&script_uri=/p/1005051716235922/weibo&feed_type=0&profile_ftype=1&key_word=%E5%BA%8A%E5%89%8D%E6%98%8E%E6%9C%88%E5%85%89&is_search=1&__rnd=1401772208635
-
-    http://weibo.com/p/aj/mblog/mbloglist?_wv=5&domain=100505&pre_page=1&page=1&max_id=3708816657175473&end_id=3716789328888062&count=15&pagebar=1&max_msign=&filtered_min_id=&pl_name=Pl_Official_LeftProfileFeed__24&id=1005051716235922&script_uri=/p/1005051716235922/weibo&feed_type=0&profile_ftype=1&key_word=%E5%BA%8A%E5%89%8D%E6%98%8E%E6%9C%88%E5%85%89&is_search=1&__rnd=1401772208635
-
-    返回格式::
-
-        {"code":"100000","msg":"","data":"<html...>"}
-
-    查看所有评论api:
-        http://weibo.com/aj/comment/big?_wv=5&id=3451784896742605&max_id=3474003261477621&filter=0&page=2&__rnd=1395231865936
-    查看所有转发api:
-        http://weibo.com/aj/mblog/info/big?_wv=5&id=3451784896742605&max_id=3560258179526005&filter=0&page=2&__rnd=1395231833403
-
-返回格式::
-
-    {
-        "code": "100000",
-        "msg": "",
-        "data": {
-            "html": "...",
-            "page": {
-                "totalpage": 201,
-                "pagenum": 2
-            },
-            "count": 4005
-        }
-    }
-
-关键在id，page循环体内递增，爬完判断。
-
-Weibo:
-
-    模块中定义 模拟浏览器登录 的处理类
-    
-    可以这样用，初始化完成即已登录。
-
-    wb = Weibo(user, password)
-
 日志::
 
     .. 
@@ -76,6 +23,8 @@ import os, sys, time
 import base64, rsa
 import json, re, binascii
 
+from datetime import datetime
+
 import requests
 from bs4 import BeautifulSoup
 
@@ -84,24 +33,12 @@ __version__ = '1.6'
 #: 作者
 __author__ = 'pythonwood'
 #: 日期
-__datetime__ = '2014-06-03'
+__datetime__ = '2014-06-05'
 #: 心情
 __mood__ = '慢慢乐观，自信，爱。'
 
 
 cookies = {
-'SINAGLOBAL':'7384095699526.369.1401609953245',
-'UOR':',,login.sina.com.cn',
-'SUBP':'002A2c-gVlwEm1uAWxfgXELuuu1xVxBxA7phgc1UHDv39FD4Xz-6p0HuHY-u_1%3D',
-'un':'13750022544@163.com',
-'_s_tentry':'weibo.com',
-'Apache':'8569682755041.867.1401932422169',
-'ULV':'1401932422210:5:5:5:8569682755041.867.1401932422169:1401771921569',
-'YF-Page-G0':'ffe43932f05408fcdf32c673d8997f97',
-'YF-V5-G0':'fec5de0eebb24ef556f426c61e53833b',
-'login_sid_t':'cce6c55fa95bf4a738443acb4d5cf341',
-'YF-Ugrow-G0':'062d74e096398759b246e61a81b65c98',
-'v5':'5fc1edb622413480f88ccd36a41ee587'
 }
 
 headers = {
@@ -111,25 +48,120 @@ headers = {
 'Cache-Control':'max-age=0',
 'Connection':'keep-alive',
 'Host':'weibo.com',
-'User-Agent':'Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/34.0.1847.116 Chrome/34.0.1847.116 Safari/537.36',
-'Cookie':'SINAGLOBAL=7384095699526.369.1401609953245; UOR=,,login.sina.com.cn; _s_tentry=weibo.com; Apache=8569682755041.867.1401932422169; ULV=1401932422210:5:5:5:8569682755041.867.1401932422169:1401771921569; YF-Page-G0=ffe43932f05408fcdf32c673d8997f97; YF-V5-G0=fec5de0eebb24ef556f426c61e53833b; login_sid_t=cce6c55fa95bf4a738443acb4d5cf341; YF-Ugrow-G0=062d74e096398759b246e61a81b65c98; v5=5fc1edb622413480f88ccd36a41ee587; appkey=; SUS=SID-2646808671-1401935853-GZ-g496v-46dabd282689d4c9bf6cd882d0802be9; SUE=es%3Db1cb7e7952848a9e738684e53fb33639%26ev%3Dv1%26es2%3D8ec1c0004d45cbd04ec4532cc0a29731%26rs0%3DMHP%252FfEsDycutNtGjENIH4e5D%252FE3lxfObjVT5E96mPV6xegpZ4fX8qcr3q6yGT3t7LCCfsX9RPoSXz561hKVXUvbunnz9limE5AnZCSkCNqF9kfTBbFygjne4OBIFNwKi3rSV6UsLVkZ0yODLkcPTC29E5uHAJN9mFOUZXgtBT3c%253D%26rv%3D0; SUP=cv%3D1%26bt%3D1401935853%26et%3D1402022253%26d%3Dc909%26i%3D2be9%26us%3D1%26vf%3D0%26vt%3D0%26ac%3D19%26st%3D0%26uid%3D2646808671%26name%3D13750022544%2540163.com%26nick%3D%25E6%25A0%25A1%25E5%259B%25AD%25E7%25BB%258F%25E6%25B5%258E%25E8%25B5%2584%25E8%25AE%25AF%25E5%2593%2588%25E5%2593%2588%26fmp%3D%26lcp%3D; SUB=AejYkRSMERO5GhGZhAtq1D1WVczmGI8%2F1LaVSVHq2XNPhGySbxC%2F6XEyXRq7Jw%2B7dWj%2BjDjAy9bf63N7prkOob1QSspkvsLeYM2POBaSsb%2BLMEl%2F75yL%2BhALAI2Dk8AgdNTr%2B2P%2Bx%2F1Ns0owR%2BbMISE%3D; SUBP=002A2c-gVlwEm1uAWxfgXELuuu1xVxBxA7phgc1UHDv39FD4Xz-6p0HuHY-u_1%3D; ALF=1433471852; SSOLoginState=1401935853; un=13750022544@163.com; page=e2379342ceb6c9c8726a496a5565689e'
+# 'User-Agent':'Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/34.0.1847.116 Chrome/34.0.1847.116 Safari/537.36',
+# 'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 5.1) Gecko/20070803 Firefox/1.5.0.12',
+'User-Agent':'Mozilla/5.0 (compatible; MSIE 8.0; Windows NT 6.0) ',
+'Cookie':'SINAGLOBAL=7384095699526.369.1401609953245; UV5=usrmdins312_177; _s_tentry=-; Apache=3144713302608.5796.1402021756413; ULV=1402021756513:7:7:7:3144713302608.5796.1402021756413:1401941181968; login_sid_t=19cccba123e99530d32ecc8aa90c7ddd; UUG=usr1473; UOR=,,login.sina.com.cn; SUS=SID-2646808671-1402021768-GZ-rok6h-f6993276b17e1564dc1046e7228ec8ba; SUE=es%3Db8f06351ec5811f36fc02b3bb1fdc4d3%26ev%3Dv1%26es2%3Dc9f04600f9e22f7a99c43deed77dcf2a%26rs0%3DUOr%252BKZbpXX3%252BimOs9%252FWcF%252FW5bXUWdoP9HhwNqkj6ncf97hRYkZ2x5Y30Vkf37BtiVzAtTMYYjB%252FJJVRooltkBIUfn%252F8cA5GMC3z5QHOEtlJ6pGjlaawbguINluU1iwWpbJNaekfsC4UAuFgHlYlRRvcGGT%252FgZHoQh%252FZtEycMUh8%253D%26rv%3D0; SUP=cv%3D1%26bt%3D1402021768%26et%3D1402108168%26d%3Dc909%26i%3Dc8ba%26us%3D1%26vf%3D0%26vt%3D0%26ac%3D0%26st%3D0%26uid%3D2646808671%26name%3D13750022544%2540163.com%26nick%3D%25E6%25A0%25A1%25E5%259B%25AD%25E7%25BB%258F%25E6%25B5%258E%25E8%25B5%2584%25E8%25AE%25AF%25E5%2593%2588%25E5%2593%2588%26fmp%3D%26lcp%3D; SUB=Aear4qsE%2F8W4zvauaRmMyImy9QnaadZvzuYTBlliLQkhmbRilZL1KLc9Gb2tABT9CZDYZO14E1ouhrSpdgF1X3bW%2FJ0ThrYfrEUM%2FKS0vuc8y8Wy4aE%2BhDVwJVXoBrEs54MfWeDdl98Joa9Yvnfj0N4%3D; SUBP=002A2c-gVlwEm1uAWxfgXELuuu1xVxBxA7phgc1UHDv39FD4Xz-6p0HuHY-u_1%3D; ALF=1433557767; SSOLoginState=1402021768; un=13750022544@163.com; wvr=5; UV5PAGE=usr513_172'
 }
 
+#: 目录
 rootdir = '/media/E/loveq-weibo'
 
-head = ('时间','网址','id','赞','转发','评论')
+#: 头
+head = ('关键字','时间','网址','id','赞','转发','评论')
 
+# dt, url, id, zan, zhuanfa, pinglun
+
+#: 微博列表,按时间倒序的
 urls_list = []
 
+#: 分隔符
 SEP = '\t'
 
-def requests_get(url, params=None):
-    resp = requests.get(url, params=params, cookies=cookies, headers=headers)
-    # print resp.url, params, resp.text[:2000]
-    sys.stdout.write('.'); sys.stdout.flush()
-    # with open('tmp.html', 'w') as f : f.write(resp.text)
-    return resp
+#: 比较时间，大于才继续
+last_time = datetime(2003,5,11)
 
+
+html_tpl = \
+u''' <!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="python应用，一些事一些情微博评论。">
+<meta name="author" content="JNU, pythonwood, 582223837@qq.com, 2014-06">
+<title> %s </title>
+<link rel="stylesheet" href="http://cdn.bootcss.com/twitter-bootstrap/3.0.3/css/bootstrap.min.css">
+<style text="text/css"> body { padding-top: 50px; } </style>
+</head>
+<body data-spy="scroll" data-target="#mynav">
+<nav id="mynav" class="navbar navbar-default navbar-inverse navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#mynav-collapse">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="#">LoveQ</a>
+    </div>
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="mynav-collapse">
+      <ul class="nav navbar-nav navbar-left">
+        <li class="active"><a href="#">0</a></li>
+        %s
+      </ul>
+    </div><!-- /.navbar-collapse -->
+  </div>
+</nav>
+<div class="container">
+<h3> %s </h3>
+<ul class="list-unstyled">
+%s
+</ul>
+</div>
+<script src="http://cdn.bootcss.com/jquery/1.10.2/jquery.min.js"></script>
+<script src="http://cdn.bootcss.com/twitter-bootstrap/3.0.3/js/bootstrap.min.js"></script>
+<script type="text/javascript">
+$(function(){
+    $('a[href^="/"]').each(function(){this.href='http://weibo.com'+$(this).attr('href');});
+    $('ul.list-unstyled>li>img[src^="http://tp"]').each(function(){$(this).click(function(){var name=$(this).next('a').text().trim(); $('ul.list-unstyled li').hide(); $('ul.list-unstyled li:contains("'+name+'")').show();});});
+    $('a.navbar-brand').click(function(){$('ul.list-unstyled li').show();});
+	var x = 10;
+	var y = 20;
+	$('ul.list-unstyled>li>img[src^="http://tp"]').mouseover(function(e){
+		$("<div id='tooltip'><img src='"+ this.src.replace('\/50\/', '/180/') +"'/><\/div>").insertBefore('ul.list-unstyled');						 
+		$("#tooltip") .css({ "position": "absolute", "top": (e.pageY+y) + "px", "left":  (e.pageX+x)  + "px" }).show("fast");	  //设置x坐标和y坐标，并且显示
+    }).mouseout(function(){
+		$("#tooltip").remove();	 //移除 
+    }).mousemove(function(e){
+		$("#tooltip") .css({ "position": "absolute", "top": (e.pageY+y) + "px", "left":  (e.pageX+x)  + "px" });
+	});
+})
+</script>
+</body>
+</html>
+'''
+
+
+
+
+def requests_get(url, params=None):
+    try:
+        resp = requests.get(url, params=params, cookies=cookies, headers=headers)
+        # print resp.url, params, resp.text[:2000]
+        sys.stdout.write('.'); sys.stdout.flush()
+        # with open('tmp.html', 'w') as f : f.write(resp.text)
+    except KeyboardInterrupt as e:
+        print e
+        sys.exit(100)
+    return resp
+def requests_json(url, params=None, limit=5):
+    n = 0
+    while n<5:
+        try:
+            resp = requests_get(url, params=params)
+            rj = resp.json()
+            return rj
+        except ValueError as e:
+            sys.stdout.write('E');sys.stdout.flush()
+            print >> sys.stderr, e, resp.url, resp.status_code
+            with open('tmp.html', 'w') as f: f.write(resp.text.encode('utf-8'))
+        except Exception as e:
+            print e
+        n += 1
+    raise ValueError('trys %s times failed'%n)
 
 def add_urls_list(html):
     def tool(text):
@@ -139,12 +171,9 @@ def add_urls_list(html):
             return text[v1+1:v2]
         else:
             return '0'
-        
-    ret = 0
+    ret = []
     bs = BeautifulSoup(html)
-    # print bs.prettify()
     for post in bs.find_all('div', class_="WB_feed_datail S_line2 clearfix"):
-        # print post.prettify()
         WB_func = post.find_all('div', class_="WB_func clearfix")[-1]  # 技巧
         WB_handle = WB_func.findChild('div', class_='WB_handle')
         WB_from = WB_func.findChild('div', class_='WB_from')
@@ -158,13 +187,13 @@ def add_urls_list(html):
         zhuanfa = tool(WB_handle_a[1].text)
         pinglun = tool(WB_handle_a[3].text)
         if any(postid in i for i in urls_list):
-            return ret
+            break
         else:
-            urls_list.append((time, url, postid, zan, zhuanfa, pinglun))
-            ret += 1
+            ret.append((time, url, postid, zan, zhuanfa, pinglun))
     return ret
 
-def get_posts_list(uid, keyword):
+def get_posts_list(uid, keyword, limit_page=1000):
+    ret = []
     url = 'http://weibo.com/p/aj/mblog/mbloglist'
     # url = 'http://127.0.0.1:8000'
     params = {
@@ -189,15 +218,26 @@ def get_posts_list(uid, keyword):
     }
     opt = ('pre_page', 'page', 'pagebar')
     n = 1
-    while n < 50:
+    while n < limit_page:
         for sel in ((n-1,n,0),(n,n,0),(n,n,1)):
             params.update(dict(zip(opt,sel)))
-            resp = requests_get(url, params)
-            rj = resp.json()
-            if add_urls_list(rj['data']) == 0: 
-                # print sel, resp.url, resp.status_code, len(resp.text) 
-                return
-        n += 1
+            # resp = requests_get(url, params)
+            # rj = resp.json()
+            rj = requests_json(url, params)
+            adds = add_urls_list(rj['data'])
+            if adds:
+                ret.extend(adds)
+            else:
+                # print sel, resp.url, resp.status_code, len(resp.text)
+                break
+        else:
+            n += 1
+            continue
+        break
+    global urls_list
+    urls_list = ret + urls_list 
+    print 'update %s new items' % len(ret)
+    return ret
 
 
 def dump(uid, keyword, filename=None):
@@ -207,6 +247,7 @@ def dump(uid, keyword, filename=None):
         f.write(SEP.join(head))
         f.write(os.linesep)
         f.write(os.linesep.join(SEP.join(i) for i in urls_list))
+    return filename
 def load(uid, keyword, filename=None):
     if not filename:
         filename = '%s%s.txt'%(keyword,uid)
@@ -214,18 +255,92 @@ def load(uid, keyword, filename=None):
         return
     fp = open(filename, 'r')
     lines = [line.strip() for line in fp.readlines()]
+    # for line in lines[-1:0:-1]:
     for line in lines[1:]:
         urls_list.append(line.split(SEP))
 
-def pull_comment(html):
-    ''''''
+def save(html, filename, title=u''):
+    '''保存'''
+    bs = BeautifulSoup(html)
+    items = []
+    nav_items = []
+    dls = bs.find_all('dl')
+    for i, dl in enumerate(dls):
+        i += 1
+        img = dl.dt.a.img.extract()
+        del img['usercard']
+        del img['alt']
+
+        dd = dl.dd.extract()
+        del dd.a['usercard']
+        del dd.a['title']
+        dd.find('div', class_="info").decompose()
+        pro = dd.find('div', class_="WB_media_expand repeat S_line1 S_bg1")
+        if pro:
+            pro.decompose()
+        dd.find('span', class_="S_txt2").unwrap()
+
+        dd.name = 'li'
+        dd.insert(0, '#%s'%i)
+        dd.insert(0, img)
+        if i%100 == 0:
+            dd['id'] = "t%s"%i
+            nav_items.append(u'<li class=""><a href="#t%s">%s</a></li>' % (i,i/100))
+        items.append(dd.prettify())
+    h = html_tpl % (title, u'\n'.join(nav_items), title, u'\n'.join(items))
+    with open(filename, 'w') as f:
+        f.write(h.encode('utf-8'))
+    return len(h)
+        
+
+def pull(keyword, dirname='/media/E/loveq/weibo/', limit_page=1000):
+    def pt(dt):
+        return dt.strftime('%H:%M:%S')
+    def sizeof_fmt(num):
+        for x in ['bytes','KB','MB','GB','TB']:
+            if num < 1024.0:
+                return "%3.1f %s" % (num, x)
+            num /= 1024.0
+    url_tpl = 'http://weibo.com/aj/comment/big?_wv=5&id=%s&max_id=3718116146669325&filter=0&page=%s&__rnd=1401970176137'
+    for it in urls_list:
+        # add keyword in urls_list
+        dt, url, postid, zan, zhuanfa, pinglun = tuple(it)
+        filename = '%s%s%s%s.html' % (dt.replace(' ','_').replace(':','-'), keyword, pinglun, '评论')
+        filepath = os.path.join(dirname, filename)
+        if os.path.isfile(filepath):
+            print '%s exist' % filename
+            continue
+        start = datetime.now()
+        print '[%s start] %s' % (pt(start), filepath)
+        n = 1
+        tag_data = ''
+        while n<limit_page:
+            # resp = requests_get(url, params)
+            # rj = resp.json()
+            rj = requests_json(url_tpl%(postid,n))
+            jn = rj['data']
+            tag_data += jn['html']
+            jn = jn['page']
+            if jn['totalpage'] == jn['pagenum']:
+                # print n, resp.url, resp.status_code, len(resp.text), jn['totalpage'], jn['pagenum']
+                break
+            n += 1
+        title = '%s %s %s%s'%(dt,keyword,pinglun,'评论')
+        filesize = save(tag_data, filepath, title.decode('utf-8'))
+        done = datetime.now()
+        secs = (done-start).seconds
+        leng = len(tag_data)
+        speed = sizeof_fmt(leng/secs)
+        print '\n[%s done] %s used %ss (%s pages %s avg %s/s)' % (pt(done), sizeof_fmt(filesize), secs, n, sizeof_fmt(leng), speed) 
 
 
 def main():
     # test = [('床前明月光','1716235922'), ('恭喜发财','1724187070')]
     # test = [(1991027691,'招聘微博'), ('liuyangzhi', '对某大学毕业照片说了两句不中听的话，招来不少年轻人不满')]
     uid, keyword = ('1716235922','床前明月光',)
-    get_posts_list(uid, keyword)
+    load(uid, keyword)
+    adds = get_posts_list(uid, keyword)
+    pull(keyword)
     dump(uid, keyword)
 
 if __name__ == '__main__':
