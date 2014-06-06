@@ -54,24 +54,6 @@ headers = {
 'Cookie':'SINAGLOBAL=7384095699526.369.1401609953245; UV5=usrmdins312_177; _s_tentry=-; Apache=3144713302608.5796.1402021756413; ULV=1402021756513:7:7:7:3144713302608.5796.1402021756413:1401941181968; login_sid_t=19cccba123e99530d32ecc8aa90c7ddd; UUG=usr1473; UOR=,,login.sina.com.cn; SUS=SID-2646808671-1402021768-GZ-rok6h-f6993276b17e1564dc1046e7228ec8ba; SUE=es%3Db8f06351ec5811f36fc02b3bb1fdc4d3%26ev%3Dv1%26es2%3Dc9f04600f9e22f7a99c43deed77dcf2a%26rs0%3DUOr%252BKZbpXX3%252BimOs9%252FWcF%252FW5bXUWdoP9HhwNqkj6ncf97hRYkZ2x5Y30Vkf37BtiVzAtTMYYjB%252FJJVRooltkBIUfn%252F8cA5GMC3z5QHOEtlJ6pGjlaawbguINluU1iwWpbJNaekfsC4UAuFgHlYlRRvcGGT%252FgZHoQh%252FZtEycMUh8%253D%26rv%3D0; SUP=cv%3D1%26bt%3D1402021768%26et%3D1402108168%26d%3Dc909%26i%3Dc8ba%26us%3D1%26vf%3D0%26vt%3D0%26ac%3D0%26st%3D0%26uid%3D2646808671%26name%3D13750022544%2540163.com%26nick%3D%25E6%25A0%25A1%25E5%259B%25AD%25E7%25BB%258F%25E6%25B5%258E%25E8%25B5%2584%25E8%25AE%25AF%25E5%2593%2588%25E5%2593%2588%26fmp%3D%26lcp%3D; SUB=Aear4qsE%2F8W4zvauaRmMyImy9QnaadZvzuYTBlliLQkhmbRilZL1KLc9Gb2tABT9CZDYZO14E1ouhrSpdgF1X3bW%2FJ0ThrYfrEUM%2FKS0vuc8y8Wy4aE%2BhDVwJVXoBrEs54MfWeDdl98Joa9Yvnfj0N4%3D; SUBP=002A2c-gVlwEm1uAWxfgXELuuu1xVxBxA7phgc1UHDv39FD4Xz-6p0HuHY-u_1%3D; ALF=1433557767; SSOLoginState=1402021768; un=13750022544@163.com; wvr=5; UV5PAGE=usr513_172'
 }
 
-#: 目录
-rootdir = '/media/E/loveq-weibo'
-
-#: 头
-head = ('关键字','时间','网址','id','赞','转发','评论')
-
-# dt, url, id, zan, zhuanfa, pinglun
-
-#: 微博列表,按时间倒序的
-urls_list = []
-
-#: 分隔符
-SEP = '\t'
-
-#: 比较时间，大于才继续
-last_time = datetime(2003,5,11)
-
-
 html_tpl = \
 u''' <!DOCTYPE html>
 <html lang="zh-cn">
@@ -138,14 +120,10 @@ $(function(){
 
 
 def requests_get(url, params=None):
-    try:
-        resp = requests.get(url, params=params, cookies=cookies, headers=headers)
-        # print resp.url, params, resp.text[:2000]
-        sys.stdout.write('.'); sys.stdout.flush()
-        # with open('tmp.html', 'w') as f : f.write(resp.text)
-    except KeyboardInterrupt as e:
-        print e
-        sys.exit(100)
+    resp = requests.get(url, params=params, cookies=cookies, headers=headers)
+    # print resp.url, params, resp.text[:2000]
+    sys.stdout.write('.'); sys.stdout.flush()
+    # with open('tmp.html', 'w') as f : f.write(resp.text)
     return resp
 def requests_json(url, params=None, limit=5):
     n = 0
@@ -163,7 +141,7 @@ def requests_json(url, params=None, limit=5):
         n += 1
     raise ValueError('trys %s times failed'%n)
 
-def add_urls_list(html):
+def add_urls_list(urls_list, html):
     def tool(text):
         v1 = text.find('(')
         v2 = text.find(')')
@@ -193,7 +171,7 @@ def add_urls_list(html):
             ret.append([i.encode('utf-8') for i in (time, url, postid, zan, zhuanfa, pinglun)])
     return ret
 
-def get_posts_list(uid, keyword, limit_page=1000):
+def get_posts_list(urls_list, uid, keyword, limit_page=1000):
     ret = []
     url = 'http://weibo.com/p/aj/mblog/mbloglist'
     # url = 'http://127.0.0.1:8000'
@@ -225,7 +203,7 @@ def get_posts_list(uid, keyword, limit_page=1000):
             # resp = requests_get(url, params)
             # rj = resp.json()
             rj = requests_json(url, params)
-            adds = add_urls_list(rj['data'])
+            adds = add_urls_list(urls_list, rj['data'])
             if adds:
                 ret.extend(adds)
             else:
@@ -235,13 +213,16 @@ def get_posts_list(uid, keyword, limit_page=1000):
             n += 1
             continue
         break
-    global urls_list
-    urls_list = ret + urls_list 
     print 'update %s new items' % len(ret)
     return ret
 
 
-def dump(uid, keyword, filename=None):
+#: 头
+head = ('关键字','时间','网址','id','赞','转发','评论')
+# dt, url, id, zan, zhuanfa, pinglun
+
+#: 分隔符 SEP = '\t'
+def dump(urls_list, filename='', uid='', keyword='', SEP = '\t'):
     if not filename:
         filename = '%s%s.txt'%(keyword,uid)
     with open(filename, 'w') as f:
@@ -249,16 +230,22 @@ def dump(uid, keyword, filename=None):
         f.write(os.linesep)
         f.write(os.linesep.join(SEP.join(i) for i in urls_list))
     return filename
-def load(uid, keyword, filename=None):
+def load(filename='', uid='', keyword='', SEP = '\t'):
+    urls_list = [] 
     if not filename:
         filename = '%s%s.txt'%(keyword,uid)
     if not os.path.isfile(filename):
+        print 'filename: %s do not exist' % filename
         return
     fp = open(filename, 'r')
     lines = [line.strip() for line in fp.readlines()]
     # for line in lines[-1:0:-1]:
     for line in lines[1:]:
         urls_list.append(line.split(SEP))
+    return urls_list
+
+
+
 
 def save(html, filename, title=u''):
     '''保存'''
@@ -294,7 +281,7 @@ def save(html, filename, title=u''):
     return len(h)
         
 
-def pull(keyword, dirname='/media/E/loveq/weibo/', limit_page=1000):
+def pull(urls_list, keyword, dirname='/media/E/loveq/weibo/', limit_page=1000):
     def pt(dt):
         return dt.strftime('%H:%M:%S')
     def sizeof_fmt(num):
@@ -340,13 +327,24 @@ def pull(keyword, dirname='/media/E/loveq/weibo/', limit_page=1000):
 
 
 def main():
-    # test = [('床前明月光','1716235922'), ('恭喜发财','1724187070')]
+    test = [('床前明月光','1716235922'), ('恭喜发财','1724187070')]
     # test = [(1991027691,'招聘微博'), ('liuyangzhi', '对某大学毕业照片说了两句不中听的话，招来不少年轻人不满')]
-    uid, keyword = ('1716235922','床前明月光',)
-    load(uid, keyword)
-    adds = get_posts_list(uid, keyword)
-    pull(keyword)
-    dump(uid, keyword)
+    for keyword,uid in test:
+        try:
+            filepath = '/media/E/loveq/%s-%s' % (uid, keyword)
+            #: 微博列表,按时间倒序的
+            urls_list = []
+            if os.path.isfile(filepath):
+                urls_list = load(filepath)
+            adds = get_posts_list(urls_list, uid, keyword) # urls_list 用于比较而已
+            urls_list = adds + urls_list
+            dump(urls_list, filepath)
+
+            dirname = '/media/E/loveq/weibo'
+            pull(urls_list,keyword, dirname)
+        except KeyboardInterrupt as e:
+            print e
+            continue
 
 if __name__ == '__main__':
     ''''''
