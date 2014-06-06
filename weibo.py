@@ -302,12 +302,15 @@ def pull(keyword, dirname='/media/E/loveq/weibo/', limit_page=1000):
                 return "%3.1f %s" % (num, x)
             num /= 1024.0
     url_tpl = 'http://weibo.com/aj/comment/big?_wv=5&id=%s&max_id=3718116146669325&filter=0&page=%s&__rnd=1401970176137'
+    dirname_all = ' '.join(os.listdir(dirname))
     for it in urls_list:
         # add keyword in urls_list
         dt, url, postid, zan, zhuanfa, pinglun = tuple(it)
         filename = '%s%s%s%s.html' % (dt.replace(' ','_').replace(':','-'), keyword, pinglun, '评论')
         filepath = os.path.join(dirname, filename)
-        if os.path.isfile(filepath):
+        testname = '%s%s'%(filename[:16],keyword)
+        # if os.path.isfile(testname): # 宽松点
+        if testname in dirname_all:
             print '%s exist' % filename
             continue
         start = datetime.now()
@@ -330,8 +333,9 @@ def pull(keyword, dirname='/media/E/loveq/weibo/', limit_page=1000):
         done = datetime.now()
         secs = (done-start).seconds
         leng = len(tag_data)
-        speed = sizeof_fmt(leng/secs)
-        print '\n[%s done] %s used %ss (%s pages %s avg %s/s)' % (pt(done), sizeof_fmt(filesize), secs, n, sizeof_fmt(leng), speed) 
+        if secs > 0: # figbug: ZeroDivisionError
+            speed = sizeof_fmt(leng/secs)
+            print '\n[%s done] %s used %ss (%s pages %s avg %s/s)' % (pt(done), sizeof_fmt(filesize), secs, n, sizeof_fmt(leng), speed) 
 
 
 def main():
@@ -345,4 +349,4 @@ def main():
 
 if __name__ == '__main__':
     ''''''
-    # main()
+    main()
