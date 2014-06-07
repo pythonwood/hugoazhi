@@ -189,7 +189,8 @@ def add_urls_list(html):
         if any(postid in i for i in urls_list):
             break
         else:
-            ret.append((time, url, postid, zan, zhuanfa, pinglun))
+            #: fix bug encoding #:ret.append((time, url, postid, zan, zhuanfa, pinglun))
+            ret.append([i.encode('utf-8') for i in (time, url, postid, zan, zhuanfa, pinglun)])
     return ret
 
 def get_posts_list(uid, keyword, limit_page=1000):
