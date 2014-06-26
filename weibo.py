@@ -274,7 +274,7 @@ def save(html, filename, title=u''):
         if i%100 == 0:
             dd['id'] = "t%s"%i
             nav_items.append(u'<li class=""><a href="#t%s">%s</a></li>' % (i,i/100))
-        items.append(dd.prettify())
+        items.append(unicode(dd)) # one line is better
     h = html_tpl % (title, u'\n'.join(nav_items), title, u'\n'.join(items))
     with open(filename, 'w') as f:
         f.write(h.encode('utf-8'))
