@@ -51,7 +51,7 @@ headers = {
 # 'User-Agent':'Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/34.0.1847.116 Chrome/34.0.1847.116 Safari/537.36',
 # 'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 5.1) Gecko/20070803 Firefox/1.5.0.12',
 'User-Agent':'Mozilla/5.0 (compatible; MSIE 8.0; Windows NT 6.0) ',
-'Cookie':'SINAGLOBAL=7384095699526.369.1401609953245; UV5=usrmdins312_177; _s_tentry=-; Apache=3144713302608.5796.1402021756413; ULV=1402021756513:7:7:7:3144713302608.5796.1402021756413:1401941181968; login_sid_t=19cccba123e99530d32ecc8aa90c7ddd; UUG=usr1473; UOR=,,login.sina.com.cn; SUS=SID-2646808671-1402021768-GZ-rok6h-f6993276b17e1564dc1046e7228ec8ba; SUE=es%3Db8f06351ec5811f36fc02b3bb1fdc4d3%26ev%3Dv1%26es2%3Dc9f04600f9e22f7a99c43deed77dcf2a%26rs0%3DUOr%252BKZbpXX3%252BimOs9%252FWcF%252FW5bXUWdoP9HhwNqkj6ncf97hRYkZ2x5Y30Vkf37BtiVzAtTMYYjB%252FJJVRooltkBIUfn%252F8cA5GMC3z5QHOEtlJ6pGjlaawbguINluU1iwWpbJNaekfsC4UAuFgHlYlRRvcGGT%252FgZHoQh%252FZtEycMUh8%253D%26rv%3D0; SUP=cv%3D1%26bt%3D1402021768%26et%3D1402108168%26d%3Dc909%26i%3Dc8ba%26us%3D1%26vf%3D0%26vt%3D0%26ac%3D0%26st%3D0%26uid%3D2646808671%26name%3D13750022544%2540163.com%26nick%3D%25E6%25A0%25A1%25E5%259B%25AD%25E7%25BB%258F%25E6%25B5%258E%25E8%25B5%2584%25E8%25AE%25AF%25E5%2593%2588%25E5%2593%2588%26fmp%3D%26lcp%3D; SUB=Aear4qsE%2F8W4zvauaRmMyImy9QnaadZvzuYTBlliLQkhmbRilZL1KLc9Gb2tABT9CZDYZO14E1ouhrSpdgF1X3bW%2FJ0ThrYfrEUM%2FKS0vuc8y8Wy4aE%2BhDVwJVXoBrEs54MfWeDdl98Joa9Yvnfj0N4%3D; SUBP=002A2c-gVlwEm1uAWxfgXELuuu1xVxBxA7phgc1UHDv39FD4Xz-6p0HuHY-u_1%3D; ALF=1433557767; SSOLoginState=1402021768; un=13750022544@163.com; wvr=5; UV5PAGE=usr513_172'
+'Cookie':'SINAGLOBAL=7722507859580.219.1402154772795; myuid=5173041337; _T_WM=5cbe5a789d1c06e5ee9bd80025b99346; UOR=,,login.sina.com.cn; UV5PAGE=usr513_151; login_sid_t=f3dbabe7a5661f1b59f4407e887cdca9; UUG=usr1461; _s_tentry=passport.weibo.com; Apache=1157157972920.686.1406000852778; ULV=1406000852999:28:9:4:1157157972920.686.1406000852778:1405426506130; SUS=SID-5173041337-1406000859-GZ-8rh32-85d31c32b17a4eac6aed408fba221b38; SUE=es%3D08d338e742c066242b99aeee1806b0a3%26ev%3Dv1%26es2%3Da63331c44cb0cdca90f93926a6554775%26rs0%3DccXKwY5SAeEVfy9LOydcpL%252BHRSBlgdY895ZexcG8A1EMp2LMa%252BaalN3yPVzdp69S%252BYvHD34Tq%252FefU3o3DJ6wPzgGOsji%252BlBeDA0Q3uSliIKajHvv0UpC6dRsz7XsAZ3aOa6%252FDQ3zFWbeD%252B9jAPZwj290RgaI3SHdp65I7Uc%252BEJE%253D%26rv%3D0; SUP=cv%3D1%26bt%3D1406000859%26et%3D1406087259%26d%3Dc909%26i%3D1b38%26us%3D1%26vf%3D0%26vt%3D0%26ac%3D0%26st%3D0%26uid%3D5173041337%26name%3Deventeat%2540sina.com%26nick%3D%25E7%2594%25A8%25E6%2588%25B75173041337%26fmp%3D%26lcp%3D; SUB=AbN29%2FBl3lHtGapkmeY19mb%2BBf7xdEPGFfoVKZoEi6VJB9ndjTBse%2F9TGaJptx2%2FYRnSa5%2BPZdGr4LA3p3hqX2xlnGqW%2F8oBq4XuNH39eGqjhsQIbkwDumhGgT15NfcLWSzCkevOLqRXEB%2FbpOcAXk4%3D; SUBP=002A2c-gVlwEm1uAWxfgXELuuu1xVxBxAAzMZ_tk-WF3TICbBjLrftLuHY-u_1%3D; ALF=1437536858; SSOLoginState=1406000859; un=eventeat@sina.com; wvr=5; UV5=usrmdins312_208'
 }
 
 html_tpl = \
@@ -274,7 +274,7 @@ def save(html, filename, title=u''):
         if i%100 == 0:
             dd['id'] = "t%s"%i
             nav_items.append(u'<li class=""><a href="#t%s">%s</a></li>' % (i,i/100))
-        items.append(unicode(dd)) # one line is better
+        items.append(unicode(dd).replace(u'\n',u'x')) # one line is better
     h = html_tpl % (title, u'\n'.join(nav_items), title, u'\n'.join(items))
     with open(filename, 'w') as f:
         f.write(h.encode('utf-8'))
