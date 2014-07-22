@@ -346,6 +346,22 @@ def main():
             print e
             continue
 
+def search_local(keyword):
+    bingo = []
+    rec = re.compile(r'<li><img.*?%s.*?</li>' % keyword)
+    dirname = '/media/E/loveq/weibo'
+    for filename in os.listdir(dirname):
+        filepath = os.path.join(dirname,filename)
+        with open(filepath) as f:
+            bingo.extend(rec.findall(f.read()))
+    title = 'search: %s' % keyword
+    with open('search_%s.html'%keyword, 'w') as f:
+        f.write(html_tpl.encode('utf-8') % (title, '', title, '\n'.join(bingo)))
+
+
 if __name__ == '__main__':
     ''''''
-    main()
+    if sys.argv[1] == 'search':
+        search_local(sys.argv[2])
+    else:
+        main()
