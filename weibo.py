@@ -299,7 +299,7 @@ def pull(urls_list, keyword, dirname='/media/E/loveq/weibo/', limit_page=1000):
         testname = '%s%s'%(filename[:16],keyword)
         # if os.path.isfile(testname): # 宽松点
         if testname in dirname_all:
-            print '%s exist' % filename
+            # print '%s exist' % filename
             continue
         start = datetime.now()
         print '[%s start] %s' % (pt(start), filepath)
